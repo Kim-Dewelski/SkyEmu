@@ -23,6 +23,7 @@ set(LINK_LIBS "")
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 option(ENABLE_RETRO_ACHIEVEMENTS "Enable Retro Achievements" ON)
+option(ENABLE_NDS_JIT "Enable NDS JIT" ON)
 
 if (EMSCRIPTEN)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -s ERROR_ON_UNDEFINED_SYMBOLS=0 -s ELIMINATE\_DUPLICATE\_FUNCTIONS=1 -s ENVIRONMENT=web -s ASSERTIONS=0 -s WASM=1 -DSE_PLATFORM_WEB --shell-file ${PROJECT_SOURCE_DIR}/src/shell.html -s USE_CLOSURE_COMPILER=0 ")
@@ -351,6 +352,10 @@ endif()
 if(IOS)
     set(SKYEMU_SRC ${SKYEMU_SRC} src/ios_support.m)
     add_definitions(-DSE_PLATFORM_IOS)
+endif()
+
+if(ENABLE_NDS_JIT)
+  set(SKYEMU_SRC ${SKYEMU_SRC} src/arm_jit.c)
 endif()
 
 if(WIN32)

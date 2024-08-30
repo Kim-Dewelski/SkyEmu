@@ -2196,6 +2196,13 @@ typedef struct{
   uint32_t padding[39];
 }nds_bess_info_t;
 
+enum nds_execution_policy {
+  NDS_EXECUTION_POLICY_INTERPRETER,
+#ifdef ENABLE_NDS_JIT
+  NDS_EXECUTION_POLICY_JIT,
+#endif
+};
+
 typedef struct{
   nds_mem_t mem;
   arm7_t arm7;
@@ -2246,6 +2253,7 @@ typedef struct{
   float ghosting_strength;
   int ppu_fast_forward_ticks;
   bool sleep_mode;
+  enum nds_execution_policy execution_policy;
   FILE * gx_log;
   FILE * io9_log;
   FILE * io7_log;
@@ -6972,6 +6980,16 @@ void nds_tick(sb_emu_state_t* emu, nds_t* nds, nds_scratch_t* scratch){
     memset(scratch->framebuffer_top,0,sizeof(scratch->framebuffer_top));
     memset(scratch->framebuffer_bottom,0,sizeof(scratch->framebuffer_bottom));
   }
+
+  void(*exec_arm9_fn)(arm7_t*);
+  void(*exec_arm7_fn)(arm7_t*);
+  if (nds->execution_policy == NDS_EXECUTION_POLICY_INTERPRETER) {
+    exec_arm9_fn = arm9_exec_instruction;
+    exec_arm7_fn = arm7_exec_instruction;
+  } else {
+    exec_arm9_fn = NULL;
+    exec_arm7_fn = NULL;
+  }
   while(nds->frame_in_progress){
     bool gx_fifo_full = nds_gxfifo_size(nds)>=NDS_GXFIFO_SIZE;
     if(!gx_fifo_full){
@@ -6980,8 +6998,8 @@ void nds_tick(sb_emu_state_t* emu, nds_t* nds, nds_scratch_t* scratch){
         if(SB_UNLIKELY(nds->nds9_interrupt_line))arm7_process_interrupts(&nds->arm9);
         if(SB_LIKELY(!nds->arm9.wait_for_interrupt)){
           nds->arm9.i_cycles=0;
-          arm9_exec_instruction(&nds->arm9);
-          if(!nds->arm9.i_cycles)arm9_exec_instruction(&nds->arm9);
+          exec_arm9_fn(&nds->arm9);
+          if(!nds->arm9.i_cycles)exec_arm9_fn(&nds->arm9);
           nds->mem.slow_bus_cycles+=nds->arm9.i_cycles/2;
         }
       }
