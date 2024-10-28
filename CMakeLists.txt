@@ -355,7 +355,7 @@ if(IOS)
 endif()
 
 if(ENABLE_NDS_JIT)
-  set(SKYEMU_SRC ${SKYEMU_SRC} src/arm_jit.c)
+  set(SKYEMU_SRC ${SKYEMU_SRC} src/arm_jit.c src/arm_jit_backend_interp.c)
 endif()
 
 if(WIN32)
